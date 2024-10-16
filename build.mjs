@@ -11,11 +11,17 @@ const ctx = await esbuild.context({
     outdir: 'dist',
 });
 
-let { host, port } = await ctx.serve({
-    servedir: 'dist',
-    onRequest: () => {
-    }
-});
+if (process.env.NODE_ENV === 'production') {
+    await ctx.rebuild();
+    console.log('Build succeeded.');
+    process.exit(0);
+} else {
+    let { host, port } = await ctx.serve({
+        servedir: 'dist',
+        onRequest: () => {
+        }
+    });
 
-console.log('Build succeeded. Serving on http://' + host + ':' + port);
-console.log("Watching for changes...");
+    console.log('Build succeeded. Serving on http://' + host + ':' + port);
+    console.log("Watching for changes...");
+}
