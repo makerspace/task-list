@@ -1,0 +1,328 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    @media screen {
+        background-color: #111;
+    }
+}
+
+.page {
+    padding-bottom: 10mm;
+    width: 210mm;
+    display: flex;
+    flex-direction: column;
+
+    .top {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    // grid-template-columns: 2fr 1fr;
+    // grid-template-rows: 300px 1fr;
+    // grid-template-areas: "top-left top-right"
+    //     "content content";
+
+
+    @media screen {
+        margin: 20px;
+        background-color: #FFFFFF;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .top-left {
+        grid-area: top-left;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .top-right {
+        padding-right: 10mm;
+        padding-top: 11.5mm;
+        grid-area: top-right;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end; // Right
+        text-align: right;
+
+        h4 {
+            margin: 0mm;
+        }
+
+        p {
+            margin-top: 0mm;
+            font-family: "Oswald", sans-serif;
+            font-size: 3.5mm;
+
+        }
+    }
+
+    .content {
+        grid-area: content;
+    }
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    margin: 20px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    gap: 12px;
+
+    .labeled-control {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 40px;
+        font-family: "Oswald", sans-serif;
+
+        label {
+            width: 100px;
+        }
+
+        input {
+            flex: 1;
+        }
+    }
+
+    @media print {
+        display: none;
+    }
+}
+
+.page input[type=text],
+.page input[type=date] {
+    border: none;
+    display: inline;
+    padding: none;
+    width: auto;
+    background: none;
+}
+
+h1 {
+    margin-top: 10mm;
+    margin-bottom: 0px;
+    display: inline-block;
+    font-size: 10mm;
+    font-family: "Bebas Neue", sans-serif;
+    margin-left: 10mm;
+    align-self: flex-start;
+}
+
+.page-sub-header {
+    margin-top: -2mm;
+}
+
+.page-date {
+    display: block;
+    font-size: 5mm;
+    font-family: "Bebas Neue", sans-serif;
+    margin-left: 9mm;
+    align-self: flex-start;
+    margin-bottom: 0mm;
+    padding-left: 0mm;
+}
+
+.page h2,
+.page h3 {
+    font-size: 8mm;
+    font-family: "Bebas Neue", sans-serif;
+    margin-top: 10mm;
+    margin-bottom: 4mm;
+}
+
+.page h4 {
+    font-size: 5mm;
+    font-family: "Bebas Neue", sans-serif;
+    margin-bottom: 4mm;
+}
+
+.task-grid {
+    display: grid;
+    grid-template-columns: min-content min-content 5fr 2fr;
+    column-gap: 7mm;
+    row-gap: 2mm;
+    margin-left: 5mm;
+}
+
+.card-group {
+    margin-left: 10mm;
+    margin-right: 10mm;
+    break-inside: avoid;
+}
+
+.group-header {
+    font-size: 4.5mm;
+    font-family: "Bebas Neue", sans-serif;
+    color: #4F4F4F;
+    margin-bottom: 2mm;
+}
+
+.header-started {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.header-done {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.header-name {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.header-assigned {
+    grid-column: 4;
+    grid-row: 1;
+}
+
+.header-separator {
+    color: #4F4F4F;
+    grid-column: 1/5;
+    grid-row: 1;
+    margin-bottom: 1mm;
+    border-bottom: 0.6mm dashed #4F4F4F;
+}
+
+.card-started {
+    grid-column: 1;
+}
+
+.card-done {
+    grid-column: 2;
+}
+
+.card-done,
+.card-started {
+    &.checkbox {
+        align-self: flex-start;
+        justify-self: center;
+        margin-top: 2.5mm;
+    }
+}
+
+.card-name {
+    grid-column: 3;
+    font-family: "Oswald", sans-serif;
+    font-size: 5mm;
+}
+
+.card-assigned {
+    grid-column: 4;
+    font-size: 5mm;
+    color: #4F4F4F;
+    font-family: "Oswald", sans-serif;
+}
+
+.card-desc {
+    font-family: "Oswald", sans-serif;
+    grid-column: 3;
+    grid-row: 2;
+    font-size: 3mm;
+    color: #5F5F5F;
+}
+
+.card-attachments {
+    margin-top: 2mm;
+    grid-column: 3 / 5;
+    flex-wrap: wrap;
+    grid-row: 4;
+    display: flex;
+    flex-direction: row;
+    gap: 5mm;
+
+    img {
+        max-height: 4cm;
+        border-radius: 1mm;
+    }
+}
+
+.card {
+    grid-column: 1/5;
+    display: grid;
+    grid-template-columns: subgrid;
+}
+
+.checkbox {
+    border: 0.4mm solid #333;
+    border-radius: 1mm;
+    width: 3mm;
+    height: 3mm;
+
+    &.checked {
+        background-color: #333;
+    }
+}
+
+.checklist-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 2mm;
+}
+
+.card-checklists {
+    grid-row: 3;
+    grid-column: 3;
+    font-family: "Oswald", sans-serif;
+}
+
+.checklist {
+    list-style: none;
+    padding: 0mm;
+    color: #222;
+}
+
+.editable-placeholder {
+    color: #999;
+
+    @media print {
+        display: none;
+    }
+}
+
+@media screen {
+    .editable-text:empty::before {
+        // Prevents content from collapsing and taking no space in the layout,
+        // if it is empty.
+        content: 'Enter text here';
+        color: #999;
+    }
+}
+
+.editable-text {
+    // Ensures whitespace is preserved when editing the text.
+    white-space: pre;
+}
+
+.qr-code {
+    margin-top: 1mm;
+    width: fit-content;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: "Oswald", sans-serif;
+    font-size: 3mm;
+    color: black;
+
+    img {
+        width: 20mm;
+        height: 20mm;
+        /* IE, only works on <img> tags */
+        -ms-interpolation-mode: nearest-neighbor;
+        /* Firefox */
+        image-rendering: crisp-edges;
+        /* Chromium + Safari */
+        image-rendering: pixelated;
+    }
+}
