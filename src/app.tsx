@@ -232,7 +232,9 @@ const App = () => {
     const defaultBoard = "https://trello.com/b/wcg1eoAv/makerspace-tasks";
     // const defaultBoard = "/makerspace-task";
     const [boardURL, setBoardURL] = useState(defaultBoard);
-    const [listNames, setListNames] = useState(["Cleaning day"]);
+    const [listNames, setListNames] = useState(() => {
+        return localStorage.getItem("listNames")?.split(',') ?? ["Cleaning day"];
+    });
     const [date, setDate] = useState(new Date().toLocaleDateString("sv-SE"));
     const [board, setBoard] = useState<Board | null>(null);
 
@@ -260,11 +262,9 @@ const App = () => {
                 if (l.closed) return null;
                 return <LabeledControl key={l.id} label={l.name}>
                     <input type="checkbox" checked={listNames.includes(l.name)} onChange={e => {
-                        if (e.target.checked) {
-                            setListNames([...listNames, l.name]);
-                        } else {
-                            setListNames(listNames.filter(n => n != l.name));
-                        }
+                        const newNames = e.target.checked ? [...listNames, l.name] : listNames.filter(n => n != l.name);
+                        setListNames(newNames);
+                        localStorage.setItem("listNames", newNames.join(','));
                     }} />
                 </LabeledControl>
             })}
