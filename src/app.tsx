@@ -229,8 +229,8 @@ const LabeledControl = ({ label, children, placeholder }: { label: string, child
     </div>
 }
 const App = () => {
-    // const defaultBoard = "https://trello.com/b/wcg1eoAv/makerspace-tasks";
-    const defaultBoard = "/makerspace-task";
+    const defaultBoard = "https://trello.com/b/wcg1eoAv/makerspace-tasks";
+    // const defaultBoard = "/makerspace-task";
     const [boardURL, setBoardURL] = useState(defaultBoard);
     const [listNames, setListNames] = useState(["Cleaning day"]);
     const [date, setDate] = useState(new Date().toLocaleDateString("sv-SE"));
