@@ -6,3 +6,4 @@ install:
 
 build: install
 	NODE_ENV=production node build.mjs
+	cp -r resources/* dist/
