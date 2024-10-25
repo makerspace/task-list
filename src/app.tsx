@@ -6,6 +6,8 @@ import "./app.scss";
 import ContentEditable, { type ContentEditableEvent } from 'react-contenteditable';
 import * as md from 'marked';
 import { generateQrCodeImage } from 'dfts-qrcode';
+import Icon from '@mdi/react';
+import { mdiEye, mdiEyeOffOutline } from '@mdi/js';
 
 // How often to save (at most). In milliseconds
 const LoadDebounce = 1000;
@@ -107,7 +109,6 @@ class DescriptionRenderer extends md.Renderer {
     override paragraph(p: md.Tokens.Paragraph): string {
         // Note: u200B/u200C/u200D are zero-width space characters, uFEFF is a zero-width no-break space
         p.tokens = p.tokens.filter(t => !(t.type == "text" && t.text.replace(/[\u200B-\u200D\uFEFF]/g, '').trim() == ""));
-        console.log(p);
         if (p.tokens.length == 0) return "";
         const inner = this.parser.parseInline(p.tokens);
         if (inner.trim() == "") return "";
@@ -135,7 +136,17 @@ class DescriptionRenderer extends md.Renderer {
     }
 }
 
-const CardComponent = ({ card, board }: { card: Card, board: Board }) => {
+const DummyCardComponent = () => {
+    return < div className="card dummy" >
+        <div className="card-started checkbox" />
+        <div className="card-done checkbox" />
+        <div className="card-name"></div>
+        <div className="card-assigned"></div>
+        {<div className="card-des" />}
+    </div >
+}
+
+const CardComponent = ({ card, board, visible, onSetVisible }: { card: Card, board: Board, visible: boolean, onSetVisible: ((f: (visible: boolean) => boolean) => void) }) => {
     const assigned = card.idMembers.map(id => board.members.find(m => m.id == id)?.fullName).filter(n => n !== undefined).join(', ');
     const desc = useMemo(() => {
         const marked = new md.Marked();
@@ -144,7 +155,12 @@ const CardComponent = ({ card, board }: { card: Card, board: Board }) => {
             async: false,
         });
     }, [card.desc]);
-    return < div className="card" >
+
+    return < div className={`card ${visible ? '' : 'hidden'}`} >
+        <div className="card-visible" onClick={() => onSetVisible(v => !v)}>
+            {visible && <Icon path={mdiEye} />}
+            {!visible && <Icon path={mdiEyeOffOutline} />}
+        </div>
         <div className="card-started checkbox" />
         <div className="card-done checkbox" />
         <div className="card-name">{card.name}</div>
@@ -155,7 +171,7 @@ const CardComponent = ({ card, board }: { card: Card, board: Board }) => {
     </div >
 }
 
-const ListComponent = ({ list, cards, board }: { list: List, cards: Card[], board: Board }) => {
+const ListComponent = ({ list, cards, board, hiddenCards, onChangeHiddenCards, dummyCards }: { list: List, cards: Card[], board: Board, hiddenCards: Set<string>, onChangeHiddenCards: (f: ((v: Set<string>) => Set<string>)) => void, dummyCards: number }) => {
     if (list.closed) return null;
 
 
@@ -175,14 +191,34 @@ const ListComponent = ({ list, cards, board }: { list: List, cards: Card[], boar
                     <div className="group-header header-name">Task</div>
                     <div className="group-header header-assigned">Ask for more info</div>
                     <div className="header-separator" />
-                    {groupCards.map(card => <CardComponent card={card} board={board} key={card.id} />)}
+                    {groupCards.map(card => <CardComponent
+                        card={card}
+                        board={board}
+                        key={card.id}
+                        visible={!hiddenCards.has(card.id)}
+                        onSetVisible={updater => onChangeHiddenCards(hiddenCards => {
+                            const visible = updater(!hiddenCards.has(card.id));
+                            const newSet = new Set(hiddenCards);
+                            if (visible) {
+                                newSet.delete(card.id);
+                            } else {
+                                newSet.add(card.id);
+                            }
+                            return newSet;
+                        })}
+                    />)}
+                    {Array(dummyCards).fill(0).map((_, i) =>
+                        <DummyCardComponent
+                            key={i}
+                        />
+                    )}
                 </div>
             </div>
         })}
     </>
 }
 
-class EditableText extends React.Component<{ id: string, tag: string, initialValue: string }, { html: string }> {
+class PersistentEditableText extends React.Component<{ id: string, tag: string, initialValue: string }, { html: string }> {
     contentEditable: React.RefObject<HTMLElement>;
 
     constructor(props: React.PropsWithoutRef<{ id: string, tag: string, initialValue: string }>) {
@@ -237,6 +273,10 @@ const App = () => {
     });
     const [date, setDate] = useState(new Date().toLocaleDateString("sv-SE"));
     const [board, setBoard] = useState<Board | null>(null);
+    const [hiddenCards, setHiddenCards] = useState(() => {
+        const stored = localStorage.getItem("hiddenCards");
+        return new Set(stored?.split(',') ?? []);
+    });
 
     const debouncedLoad = useCallback(debounce((url: string) => {
         fetch(url + ".json").then(r => r.json()).then(json => {
@@ -272,20 +312,32 @@ const App = () => {
         <div className="page">
             <div className="top">
                 <div className="top-left">
-                    <EditableText id="page-header" tag="h1" initialValue="Makerspace Work Day<br/>Autumn Edition" />
+                    <PersistentEditableText id="page-header" tag="h1" initialValue="Makerspace Work Day<br/>Autumn Edition" />
                     <input className='page-date' type="date" lang="se-SV" value={date} onChange={e => {
                         setDate(e.target.value);
                     }} />
                 </div>
                 <div className="top-right">
-                    <EditableText id="header1" tag="h4" initialValue="Work Leaders" />
-                    <EditableText id="content1" tag="p" initialValue="Aron Granberg<br/>Daniel Berglund" />
-                    <EditableText id="header2" tag="h4" initialValue="Schedule" />
-                    <EditableText id="content2" tag="p" initialValue="Start: ~12 PM<br/>Dinner: ~6 PM<br/>End: ~9 PM" />
+                    <PersistentEditableText id="header1" tag="h4" initialValue="Work Leaders" />
+                    <PersistentEditableText id="content1" tag="p" initialValue="Aron Granberg<br/>Daniel Berglund" />
+                    <PersistentEditableText id="header2" tag="h4" initialValue="Schedule" />
+                    <PersistentEditableText id="content2" tag="p" initialValue="Start: ~12 PM<br/>Dinner: ~6 PM<br/>End: ~9 PM" />
                 </div>
             </div>
             <div className='content'>
-                {board != null && lists.filter(l => listNames.includes(l.list.name.trim())).map(({ list, cards }) => <ListComponent key={list.id} list={list} cards={cards} board={board} />)}
+                {board != null && lists.filter(l => listNames.includes(l.list.name.trim())).map(({ list, cards }) => <ListComponent
+                    key={list.id}
+                    list={list}
+                    cards={cards}
+                    board={board}
+                    hiddenCards={hiddenCards}
+                    onChangeHiddenCards={updater => {
+                        const newHiddenCards = updater(hiddenCards);
+                        localStorage.setItem("hiddenCards", Array.from(newHiddenCards).join(','));
+                        setHiddenCards(newHiddenCards);
+                    }}
+                    dummyCards={4}
+                />)}
             </div>
         </div>
     </>;
