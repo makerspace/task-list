@@ -62,6 +62,8 @@ body {
 
     .content {
         grid-area: content;
+        display: flex;
+        flex-direction: column;
     }
 }
 
@@ -373,4 +375,24 @@ h1 {
         /* Chromium + Safari */
         image-rendering: pixelated;
     }
+}
+
+.error {
+    display: block;
+    padding: 10px;
+    background-color: #f98080;
+    color: white;
+    margin-left: 20px;
+    margin-right: 20px;
+    border-radius: 5px;
+    font-family: sans-serif;
+}
+
+.loading {
+    display: block;
+    align-self: center;
+    font-family: "Bebas Neue", sans-serif;
+    font-size: 20px;
+    margin-top: 40px;
+    padding: 20px;
 }

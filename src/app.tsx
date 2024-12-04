@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { debounce } from 'ts-debounce';
 import "./app.scss";
@@ -8,6 +8,7 @@ import * as md from 'marked';
 import { generateQrCodeImage } from 'dfts-qrcode';
 import Icon from '@mdi/react';
 import { mdiEye, mdiEyeOffOutline } from '@mdi/js';
+import fetchRetry from 'fetch-retry';
 
 // How often to save (at most). In milliseconds
 const LoadDebounce = 1000;
@@ -278,15 +279,27 @@ const App = () => {
         return new Set(stored?.split(',') ?? []);
     });
 
-    const debouncedLoad = useCallback(debounce((url: string) => {
-        fetch(url + ".json").then(r => r.json()).then(json => {
+    const [error, setError] = useState<string | null>(null);
+
+    let debouncedLoad = null;
+    debouncedLoad = useCallback(debounce((url: string) => {
+        console.log("Loading board", url);
+        const f = fetchRetry(fetch);
+        f(url + ".json", {
+            retryDelay: (attempt, error, response) => Math.pow(2, attempt) * 1000 // 1000, 2000, 4000
+        }).then(r => r.json()).then(json => {
             setBoard(parseBoard(json));
+            setError(null);
         }).catch(e => {
             console.error(e);
             setBoard(null);
+            setError(e.toString());
         });
     }, LoadDebounce, { isImmediate: true }), []);
-    debouncedLoad(boardURL);
+
+    useEffect(() => {
+        debouncedLoad(boardURL);
+    }, []);
 
     const lists = useMemo(() => board !== null ? groupCardsByList(board) : [], [board]);
 
@@ -309,6 +322,7 @@ const App = () => {
                 </LabeledControl>
             })}
         </div>
+        {error !== null && <div className='error'>{error}</div>}
         <div className="page">
             <div className="top">
                 <div className="top-left">
@@ -338,13 +352,20 @@ const App = () => {
                     }}
                     dummyCards={4}
                 />)}
+                {board == null && error == null && <div className='loading'>Loading...</div>}
             </div>
         </div>
     </>;
 }
 
+console.log("Waiting for load");
+const mount = () => {
+    console.log("Loaded");
+    const container = document.getElementById('app');
+    const root = createRoot(container!);
+    root.render(<App />);
+}
 
-
-const container = document.getElementById('app');
-const root = createRoot(container!);
-root.render(<App />);
+console.log(document.readyState);
+if (document.readyState === "loading") document.addEventListener('DOMContentLoaded', mount);
+else mount();
