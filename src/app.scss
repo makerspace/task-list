@@ -308,6 +308,7 @@ h1 {
     border-radius: 1mm;
     width: 3mm;
     height: 3mm;
+    flex-shrink: 0;
 
     &.checked {
         background-color: #333;
