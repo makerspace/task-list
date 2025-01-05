@@ -25,11 +25,12 @@ const parseBoard = (json: any): Board => {
 
 const fixupCardDescriptions = (board: Board) => {
     for (const card of board.cards) {
-        const m = card.desc.match(/Ask: @([a-zA-Z0-9]+) for (instructions|more info)./g);
+        // Trello uses formats like "@arongranberg" and "@:4e9736610a46d400000116e2" to refer to users
+        const m = card.desc.match(/Ask: @:?([a-zA-Z0-9]+) for (instructions|more info)./g);
         if (m !== null) {
             for (const match of m) {
-                const memberName = match.match(/@([a-zA-Z0-9]+)/)![1];
-                const member = board.members.find(m => m.username == memberName);
+                const memberName = match.match(/@:?([a-zA-Z0-9]+)/)![1];
+                const member = board.members.find(m => m.username == memberName || m.id == memberName);
                 if (member !== undefined) {
                     if (!card.idMembers.includes(member.id)) {
                         card.idMembers.unshift(member.id);
