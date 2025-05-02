@@ -77,17 +77,21 @@ body {
     display: flex;
     flex-direction: column;
     padding: 20px;
-    gap: 12px;
 
     .labeled-control {
         display: flex;
         flex-direction: row;
         align-items: center;
         gap: 40px;
+        padding: 6px;
         font-family: "Oswald", sans-serif;
 
+        &:hover {
+            background-color: #f0f0f0;
+        }
+
         label {
-            width: 100px;
+            width: 200px;
         }
 
         input {

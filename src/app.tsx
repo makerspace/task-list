@@ -42,11 +42,17 @@ const fixupCardDescriptions = (board: Board) => {
     }
 }
 
-const groupCardsByLabel = (cards: Card[], board: Board): Map<Label | null, Card[]> => {
+const groupCardsByLabel = (cards: Card[], board: Board, ignoredLabelIds: string[]): Map<Label | null, Card[]> => {
     const groups = new Map<Label | null, Card[]>();
     cards.forEach(card => {
-        const labelId = card.labels.length > 0 ? card.labels[0]!.id : null;
-        const label = board.labels.find(l => l.id == labelId) ?? null;
+        let label = null;
+        for (const labelEntry of card.labels) {
+            const labelGlobal = board.labels.find(l => l.id == labelEntry.id) ?? null;
+            if (labelGlobal !== null && !ignoredLabelIds.includes(labelGlobal.id)) {
+                label = labelGlobal;
+                break;
+            }
+        }
         if (!groups.has(label)) {
             groups.set(label, []);
         }
@@ -173,11 +179,8 @@ const CardComponent = ({ card, board, visible, onSetVisible }: { card: Card, boa
     </div >
 }
 
-const ListComponent = ({ list, cards, board, hiddenCards, onChangeHiddenCards, dummyCards }: { list: List, cards: Card[], board: Board, hiddenCards: Set<string>, onChangeHiddenCards: (f: ((v: Set<string>) => Set<string>)) => void, dummyCards: number }) => {
-    if (list.closed) return null;
-
-
-    const groups = groupCardsByLabel(cards, board);
+const CardsComponent = ({ cards, board, hiddenCards, onChangeHiddenCards, dummyCards, ignoredLabelIds }: { cards: Card[], board: Board, hiddenCards: Set<string>, onChangeHiddenCards: (f: ((v: Set<string>) => Set<string>)) => void, dummyCards: number, ignoredLabelIds: string[] }) => {
+    const groups = groupCardsByLabel(cards, board, ignoredLabelIds);
     const groupNames = Array.from(groups.keys());
     groupNames.sort((a, b) => a == null ? -1 : (b == null ? 1 : a.name.localeCompare(b.name)));
 
@@ -268,10 +271,13 @@ const LabeledControl = ({ label, children, placeholder }: { label: string, child
 }
 const App = () => {
     const defaultBoard = "https://trello.com/b/wcg1eoAv/makerspace-tasks";
-    // const defaultBoard = "/makerspace-task";
+    // const defaultBoard = "/makerspace-tasks";
     const [boardURL, setBoardURL] = useState(defaultBoard);
-    const [listNames, setListNames] = useState(() => {
-        return localStorage.getItem("listNames")?.split(',') ?? ["Cleaning day"];
+    const [listIds, setListIds] = useState(() => {
+        return localStorage.getItem("listIds")?.split(',') ?? [];
+    });
+    const [ignoredLabels, setIgnoredLabels] = useState(() => {
+        return localStorage.getItem("ignoredLabels")?.split(',') ?? [];
     });
     const [date, setDate] = useState(new Date().toLocaleDateString("sv-SE"));
     const [board, setBoard] = useState<Board | null>(null);
@@ -302,7 +308,10 @@ const App = () => {
         debouncedLoad(boardURL);
     }, []);
 
-    const lists = useMemo(() => board !== null ? groupCardsByList(board) : [], [board]);
+    // const lists = useMemo(() => board !== null ? groupCardsByList(board) : [], [board]);
+
+    // const allCards = board?.lists.filter(l => listIds.includes(l.name.trim())).flatMap(l => l.c)
+    const allCards = board?.cards.filter(c => !c.closed && listIds.includes(c.idList));
 
     return <>
         <div className='controls'>
@@ -312,13 +321,25 @@ const App = () => {
                     debouncedLoad(e.target.value);
                 }} />
             </LabeledControl>
+            <h3>Lists</h3>
             {board?.lists.map(l => {
                 if (l.closed) return null;
                 return <LabeledControl key={l.id} label={l.name}>
-                    <input type="checkbox" checked={listNames.includes(l.name)} onChange={e => {
-                        const newNames = e.target.checked ? [...listNames, l.name] : listNames.filter(n => n != l.name);
-                        setListNames(newNames);
-                        localStorage.setItem("listNames", newNames.join(','));
+                    <input type="checkbox" checked={listIds.includes(l.id)} onChange={e => {
+                        const newNames = e.target.checked ? [...listIds, l.id] : listIds.filter(n => n != l.id);
+                        setListIds(newNames);
+                        localStorage.setItem("listIds", newNames.join(','));
+                    }} />
+                </LabeledControl>
+            })}
+            <h3>Labels</h3>
+            {board?.labels.map(l => {
+                if (l.uses == 0) return null;
+                return <LabeledControl key={l.id} label={l.name}>
+                    <input type="checkbox" checked={!ignoredLabels.includes(l.id)} onChange={e => {
+                        const newIds = !e.target.checked ? [...ignoredLabels, l.id] : ignoredLabels.filter(n => n != l.id);
+                        setIgnoredLabels(newIds);
+                        localStorage.setItem("ignoredLabels", newIds.join(','));
                     }} />
                 </LabeledControl>
             })}
@@ -340,19 +361,18 @@ const App = () => {
                 </div>
             </div>
             <div className='content'>
-                {board != null && lists.filter(l => listNames.includes(l.list.name.trim())).map(({ list, cards }) => <ListComponent
-                    key={list.id}
-                    list={list}
-                    cards={cards}
+                {board != null && <CardsComponent
+                    cards={allCards ?? []}
                     board={board}
+                    ignoredLabelIds={ignoredLabels}
                     hiddenCards={hiddenCards}
                     onChangeHiddenCards={updater => {
                         const newHiddenCards = updater(hiddenCards);
                         localStorage.setItem("hiddenCards", Array.from(newHiddenCards).join(','));
                         setHiddenCards(newHiddenCards);
                     }}
-                    dummyCards={4}
-                />)}
+                    dummyCards={2}
+                />}
                 {board == null && error == null && <div className='loading'>Loading...</div>}
             </div>
         </div>
